@@ -68,15 +68,18 @@ variable "region" {
 ## VPC related variables
 
 variable "vpc_cidr" {
+  type    = string
   default = "10.1.0.0/16"
 }
 
 variable "private_subnets" {
+  type        = list(string)
   description = "List of private subnet cidrs"
   default     = ["10.1.1.0/24", "10.1.2.0/24", "10.1.3.0/24"]
 }
 
 variable "availability_zones" {
+  type        = list(string)
   description = "List of availability zones for the VPC"
   default     = ["us-east-2a", "us-east-2b", "us-east-2c"]
 }
