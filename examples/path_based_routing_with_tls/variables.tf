@@ -10,10 +10,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-variable "naming_prefix" {
-  description = "Prefix for the provisioned resources."
+
+variable "logical_product_family" {
   type        = string
-  default     = "demo-app"
+  description = <<EOF
+    (Required) Name of the product family for which the resource is created.
+    Example: org_name, department_name.
+  EOF
+  nullable    = false
+  default     = "launch"
+
+  validation {
+    condition     = can(regex("^[_\\-A-Za-z0-9]+$", var.logical_product_family))
+    error_message = "The variable must contain letters, numbers, -, _, and .."
+  }
+}
+
+variable "logical_product_service" {
+  type        = string
+  description = <<EOF
+    (Required) Name of the product service for which the resource is created.
+    For example, backend, frontend, middleware etc.
+  EOF
+  nullable    = false
+  default     = "backend"
+
+  validation {
+    condition     = can(regex("^[_\\-A-Za-z0-9]+$", var.logical_product_service))
+    error_message = "The variable must contain letters, numbers, -, _, and .."
+  }
 }
 
 variable "environment" {
@@ -24,16 +49,19 @@ variable "environment" {
 
 variable "environment_number" {
   description = "The environment count for the respective environment. Defaults to 000. Increments in value of 1"
+  type        = string
   default     = "000"
 }
 
 variable "resource_number" {
   description = "The resource count for the respective resource. Defaults to 000. Increments in value of 1"
+  type        = string
   default     = "000"
 }
 
 variable "region" {
   description = "AWS Region in which the infra needs to be provisioned"
+  type        = string
   default     = "us-east-2"
 }
 
@@ -57,6 +85,7 @@ variable "availability_zones" {
 
 variable "tls_enforce" {
   description = "Whether to enforce TLS on the backends"
+  type        = bool
   default     = false
 }
 
@@ -69,21 +98,106 @@ variable "tls_mode" {
   default     = "STRICT"
 }
 
-variable "port" {
-  description = "Application port"
-  type        = number
-}
-
-variable "health_check_path" {
-  description = "Destination path for the health check request"
-  default     = "/"
-}
-
 variable "certificate_authority_arns" {
   description = "List of ARNs of private CAs to validate the private certificates"
   type        = list(string)
   default     = []
 }
+
+variable "key_algorithm" {
+  description = "Type of public key algorithm to use for this CA"
+  type        = string
+  default     = "RSA_4096"
+}
+
+variable "signing_algorithm" {
+  description = "Name of the algorithm your private CA uses to sign certificate requests."
+  type        = string
+  default     = "SHA512WITHRSA"
+}
+
+variable "subject" {
+  description = "Contains information about the certificate subject. Identifies the entity that owns or controls the public key in the certificate. The entity can be a user, computer, device, or service."
+  type = object({
+    country                      = optional(string)
+    distinguished_name_qualifier = optional(string)
+    generation_qualifier         = optional(string)
+    given_name                   = optional(string)
+    initials                     = optional(string)
+    locality                     = optional(string)
+    organization                 = optional(string)
+    organizational_unit          = optional(string)
+    state                        = optional(string)
+  })
+  default = {
+    country             = "US"
+    organization        = "Launch by NTT DATA"
+    state               = "Texas"
+    organizational_unit = "DSO"
+  }
+}
+
+variable "ca_certificate_validity" {
+  description = "Configures end of the validity period for the CA ROOT certificate. Defaults to 1 year"
+  type = object({
+    type  = string
+    value = number
+  })
+
+  default = {
+    type  = "YEARS"
+    value = 10
+  }
+}
+
+variable "health_check_config" {
+  type = object({
+    healthy_threshold   = number
+    interval_millis     = number
+    timeout_millis      = number
+    unhealthy_threshold = number
+  })
+
+  default = {
+    healthy_threshold   = 2
+    interval_millis     = 50000
+    timeout_millis      = 50000
+    unhealthy_threshold = 3
+  }
+}
+
+variable "health_check_path" {
+  description = "Destination path for the health check request"
+  type        = string
+  default     = ""
+}
+
+variable "idle_duration" {
+  description = "Idle duration for all the listeners"
+  type = object({
+    unit  = string
+    value = number
+  })
+  default = null
+}
+
+variable "per_request_timeout" {
+  description = "Per Request timeout for all the listeners"
+  type = object({
+    unit  = string
+    value = number
+  })
+  default = null
+}
+
+## Service Discovery
+
+## DNS (conflicts with Service Discovery)
+variable "ports" {
+  description = "Application port"
+  type        = list(number)
+}
+
 
 ## Virtual Gateway
 variable "tls_ports" {
@@ -96,6 +210,12 @@ variable "listener_port" {
   description = "The port mapping information for the listener."
   type        = number
   default     = 8080
+}
+
+variable "trust_acm_certificate_authority_arns" {
+  description = "One or more Amazon Resource Names (ARNs)."
+  type        = list(string)
+  default     = []
 }
 
 variable "tags" {
