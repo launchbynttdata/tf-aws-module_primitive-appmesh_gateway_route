@@ -92,7 +92,7 @@ module "appmesh_virtual_gateway" {
 
   tags = var.tags
 
-  #depends_on = [app_mesh.name]
+  depends_on = [module.app_mesh]
 }
 
 module "appmesh_virtual_gateway_route" {
@@ -108,7 +108,11 @@ module "appmesh_virtual_gateway_route" {
 
   tags = var.tags
 
-  depends_on = [module.appmesh_virtual_gateway, module.appmesh_virtual_service]
+  #TODO:
+  #The module at module.appmesh_virtual_gateway_route is a legacy module which
+  #contains its own local provider configurations, and so calls to it may not
+  #use the count, for_each, or depends_on arguments.
+  #depends_on = [appmesh_virtual_gateway.listener_port, appmesh_virtual_service.virtual_node_name]
 }
 
 module "private_ca" {
