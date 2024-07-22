@@ -54,8 +54,7 @@ module "virtual_node" {
   per_request_timeout        = var.per_request_timeout
   tags                       = var.tags
 
-  #TODO: Refactor module deps
-  #depends_on = [module.namespace]
+  depends_on = [module.namespace]
 }
 
 module "app_mesh" {
@@ -75,8 +74,7 @@ module "appmesh_virtual_service" {
 
   tags = var.tags
 
-  #TODO: Refactor module deps
-  #depends_on = [virtual_node.service_name, app_mesh.name]
+  depends_on = [module.virtual_node, module.app_mesh]
 }
 
 module "appmesh_virtual_gateway" {
@@ -94,7 +92,6 @@ module "appmesh_virtual_gateway" {
 
   tags = var.tags
 
-  #TODO: Refactor module deps
   #depends_on = [app_mesh.name]
 }
 
@@ -111,8 +108,7 @@ module "appmesh_virtual_gateway_route" {
 
   tags = var.tags
 
-  #TODO: Refactor module deps
-  #depends_on = [appmesh_virtual_gateway.mesh_name, appmesh_virtual_service.app_mesh_name]
+  depends_on = [module.appmesh_virtual_gateway, module.appmesh_virtual_service]
 }
 
 module "private_ca" {
