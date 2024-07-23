@@ -48,7 +48,7 @@ module "virtual_node" {
   health_check_path          = var.health_check_path
   tls_enforce                = var.tls_enforce
   tls_mode                   = var.tls_mode
-  certificate_authority_arns = length(var.certificate_authority_arns) > 0 ? var.certificate_authority_arns : [module.private_ca[0].private_ca_arn]
+  certificate_authority_arns = length(var.certificate_authority_arns) > 0 ? var.certificate_authority_arns : [module.private_ca.private_ca_arn]
   health_check_config        = var.health_check_config
   idle_duration              = var.idle_duration
   per_request_timeout        = var.per_request_timeout
@@ -88,7 +88,7 @@ module "appmesh_virtual_gateway" {
   listener_port                        = var.listener_port
   health_check_port                    = var.listener_port
   acm_certificate_arn                  = module.private_cert.certificate_arn
-  trust_acm_certificate_authority_arns = length(var.trust_acm_certificate_authority_arns) > 0 ? var.trust_acm_certificate_authority_arns : [module.private_ca[0].private_ca_arn]
+  trust_acm_certificate_authority_arns = length(var.trust_acm_certificate_authority_arns) > 0 ? var.trust_acm_certificate_authority_arns : [module.private_ca.private_ca_arn]
 
   tags = var.tags
 
@@ -137,7 +137,7 @@ module "private_cert" {
   source = "git::https://github.com/launchbynttdata/tf-aws-module_primitive-acm_private_cert?ref=1.0.1"
 
   # Private CA is created if not passed as input
-  private_ca_arn = length(var.certificate_authority_arns) == 0 ? module.private_ca[0].private_ca_arn : var.certificate_authority_arns[0]
+  private_ca_arn = length(var.certificate_authority_arns) == 0 ? module.private_ca.private_ca_arn : var.certificate_authority_arns[0]
   # For virtual gateway
   domain_name = "${local.virtual_gateway_name}.${local.namespace_name}"
   # For virtual Node
