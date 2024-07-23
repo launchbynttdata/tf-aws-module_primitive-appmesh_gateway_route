@@ -65,3 +65,4 @@ azure_env.sh
 # VS Code
 .vscode/
 **/dev.postCreate.sh
+.devcontainer
