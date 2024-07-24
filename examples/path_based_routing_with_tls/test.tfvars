@@ -1,7 +1,7 @@
-naming_prefix              = "example"
+logical_product_family     = "example"
 tls_mode                   = "STRICT"
 listener_port              = "443"
-port                       = 8080
+ports                      = [8080]
 health_check_path          = "/"
 certificate_authority_arns = []
 tags = {

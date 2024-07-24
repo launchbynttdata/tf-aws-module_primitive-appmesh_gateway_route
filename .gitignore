@@ -42,6 +42,7 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 provider.tf
+**/example.tfvars.*
 
 # Include override files you do wish to add to version control using negated pattern
 # !example_override.tf
@@ -63,3 +64,5 @@ azure_env.sh
 
 # VS Code
 .vscode/
+**/dev.postCreate.sh
+.devcontainer
