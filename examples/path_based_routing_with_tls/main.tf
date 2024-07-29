@@ -44,7 +44,7 @@ module "virtual_node" {
   acm_certificate_arn        = module.private_cert.certificate_arn
   ports                      = var.ports
   namespace_name             = local.namespace_name
-  name                       = local.name
+  name                       = local.virtual_node_name
   app_mesh_id                = module.app_mesh.id
   service_name               = local.service_name
   health_check_path          = var.health_check_path
@@ -56,7 +56,7 @@ module "virtual_node" {
   per_request_timeout        = var.per_request_timeout
   tags                       = var.tags
 
-  depends_on = [module.namespace]
+  depends_on = [module.namespace, module.app_mesh]
 }
 
 module "app_mesh" {
@@ -85,7 +85,7 @@ module "appmesh_virtual_gateway" {
   source  = "terraform.registry.launch.nttdata.com/module_primitive/virtual_gateway/aws"
   version = "~> 1.0.0"
 
-  name                                 = local.name
+  name                                 = local.virtual_gateway_name
   mesh_name                            = local.app_mesh_name
   tls_enforce                          = var.tls_enforce
   tls_mode                             = var.tls_mode

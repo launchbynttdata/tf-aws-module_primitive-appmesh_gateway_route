@@ -87,5 +87,7 @@ provider "random" {}
 | <a name="output_arn"></a> [arn](#output\_arn) | ARN of the gateway route |
 | <a name="output_vgw_id"></a> [vgw\_id](#output\_vgw\_id) | ID of the virtual gateway |
 | <a name="output_vgw_arn"></a> [vgw\_arn](#output\_vgw\_arn) | ARN of the virtual gateway |
+| <a name="output_vnode_arn"></a> [vnode\_arn](#output\_vnode\_arn) | ARN of the virtual node |
+| <a name="output_vnode_name"></a> [vnode\_name](#output\_vnode\_name) | Name of the virtual node |
 | <a name="output_random_int"></a> [random\_int](#output\_random\_int) | Random Int postfix |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->

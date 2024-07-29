@@ -30,6 +30,16 @@ output "vgw_arn" {
   value       = module.appmesh_virtual_gateway.arn
 }
 
+output "vnode_arn" {
+  description = "ARN of the virtual node"
+  value       = module.virtual_node.arn
+}
+
+output "vnode_name" {
+  description = "Name of the virtual node"
+  value       = module.virtual_node.name
+}
+
 output "random_int" {
   description = "Random Int postfix"
   value       = random_integer.priority.result
