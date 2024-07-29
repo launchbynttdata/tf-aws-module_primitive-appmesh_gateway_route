@@ -26,7 +26,7 @@ const (
 	caModule        = "module.private_ca"
 )
 
-func TestAppMeshGatewayRoute(t *testing.T) {
+func TestAppMeshGatewayRouteAndVirtualNode(t *testing.T) {
 	t.Parallel()
 	stage := test_structure.RunTestStage
 
@@ -37,7 +37,9 @@ func TestAppMeshGatewayRoute(t *testing.T) {
 	for _, file := range files {
 		dir := base + file.Name()
 		if file.IsDir() {
+			defer stage(t, "teardown_appmesh_virtual_node", func() { tearDownAppMeshVirtualNode(t, dir) })
 			defer stage(t, "teardown_appmesh_gateway_route", func() { tearDownAppMeshGatewayRoute(t, dir) })
+			stage(t, "setup_and_test_appmesh_virtual_node", func() { setupAndTestAppMeshVirtualNode(t, dir) })
 			stage(t, "setup_and_test_appmesh_gateway_route", func() { setupAndTestAppMeshGatewayRoute(t, dir) })
 		}
 	}
@@ -85,9 +87,11 @@ func setupAndTestAppMeshGatewayRoute(t *testing.T, dir string) {
 	actualRandomId := terraform.Output(t, terraformOptions, "random_int")
 	assert.NotEmpty(t, actualRandomId, "Random ID is empty")
 
-	expectedNamePrefix := terraform.GetVariableAsStringFromVarFile(t, dir+testVarFileName, "naming_prefix")
-	expectedMeshName := expectedNamePrefix + "-app-mesh-" + actualRandomId
-	expectedGatewayRouteName := expectedNamePrefix + "-default-route-" + actualRandomId
+	logical_product_family     := terraform.GetVariableAsStringFromVarFile(t, dir+testVarFileName, "logical_product_family")
+	logical_product_service    := terraform.GetVariableAsStringFromVarFile(t, dir+testVarFileName, "logical_product_service")
+	expectedNamePrefix         := logical_product_family + "-" + logical_product_service
+	expectedMeshName           := expectedNamePrefix + "-app-mesh-" + actualRandomId
+	expectedGatewayRouteName   := expectedNamePrefix + "-vroute-" + actualRandomId
 	expectedVirtualGatewayName := expectedNamePrefix + "-vgw-" + actualRandomId
 
 	cfg, err := config.LoadDefaultConfig(
@@ -122,6 +126,62 @@ func setupAndTestAppMeshGatewayRoute(t *testing.T, dir string) {
 
 }
 
+func setupAndTestAppMeshVirtualNode(t *testing.T, dir string) {
+	terraformOptions := &terraform.Options{
+		TerraformDir: dir,
+		VarFiles:     []string{dir + testVarFileName},
+		NoColor:      true,
+		Logger:       logger.Discard,
+	}
+
+	test_structure.SaveTerraformOptions(t, dir, terraformOptions)
+
+	terraform.InitAndApply(t, terraformOptions)
+
+	expectedPatternNodeARN := "^arn:aws:appmesh:[a-z]{2}-[a-z]+-[0-9]{1}:[0-9]{12}:mesh/[a-zA-Z0-9-]+/virtualNode/[a-zA-Z0-9-]+$"
+
+	actualVirtualNodeARN := terraform.Output(t, terraformOptions, "vnode_arn")
+	actualVirtualNodeName := terraform.Output(t, terraformOptions, "vnode_name")
+	assert.Regexp(t, expectedPatternNodeARN, actualVirtualNodeARN, "Virtual node ARN does not match expected pattern")
+	actualRandomId := terraform.Output(t, terraformOptions, "random_int")
+	assert.NotEmpty(t, actualRandomId, "Random ID is empty")
+
+	logical_product_family     := terraform.GetVariableAsStringFromVarFile(t, dir+testVarFileName, "logical_product_family")
+	logical_product_service    := terraform.GetVariableAsStringFromVarFile(t, dir+testVarFileName, "logical_product_service")
+	expectedNamePrefix         := logical_product_family + "-" + logical_product_service
+	expectedMeshName           := expectedNamePrefix + "-app-mesh-" + actualRandomId
+	expectedVirtualNodeName    := expectedNamePrefix + "-vnode-" + actualRandomId
+
+	cfg, err := config.LoadDefaultConfig(
+		context.TODO(),
+		config.WithSharedConfigProfile(os.Getenv("AWS_PROFILE")),
+	)
+	if err != nil {
+		assert.Error(t, err, "can't connect to aws")
+	}
+
+	client := appmesh.NewFromConfig(cfg)
+	input := &appmesh.DescribeVirtualNodeInput{
+		MeshName:        aws.String(expectedMeshName),
+		VirtualNodeName: aws.String(expectedVirtualNodeName),
+	}
+	result, err := client.DescribeVirtualNode(context.TODO(), input)
+	if err != nil {
+		assert.Fail(t, fmt.Sprintf("The Expected virtual node was not found %s", err.Error()))
+
+	}
+
+	virtualNode  := result.VirtualNode
+	expectedName := *virtualNode.VirtualNodeName
+	expectedArn  := *virtualNode.Metadata.Arn
+
+	assert.Equal(t, expectedArn, actualVirtualNodeARN, "Virtual node ARN does not match")
+	assert.Equal(t, expectedName, actualVirtualNodeName, "Virtual node name does not match")
+
+	checkTagsMatch(t, dir, actualVirtualNodeARN, client)
+
+}
+
 func checkTagsMatch(t *testing.T, dir string, actualARN string, client *appmesh.Client) {
 	expectedTags, err := terraform.GetVariableAsMapFromVarFileE(t, dir+testVarFileName, "tags")
 	if err == nil {
@@ -149,4 +209,10 @@ func tearDownAppMeshGatewayRoute(t *testing.T, dir string) {
 	terraformOptions.Logger = logger.Discard
 	terraform.Destroy(t, terraformOptions)
 
+}
+
+func tearDownAppMeshVirtualNode(t *testing.T, dir string) {
+	terraformOptions := test_structure.LoadTerraformOptions(t, dir)
+	terraformOptions.Logger = logger.Discard
+	terraform.Destroy(t, terraformOptions)
 }
