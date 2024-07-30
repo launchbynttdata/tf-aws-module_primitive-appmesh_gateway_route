@@ -11,7 +11,7 @@
 // limitations under the License.
 locals {
   random_id            = random_integer.priority.result
-  name                 = "${var.logical_product_family}-${var.logical_product_service}-vgw-${local.random_id}"
+  name                 = "${var.logical_product_family}-${var.logical_product_service}-vroute-${local.random_id}"
   namespace_name       = "example${local.random_id}.local"
   service_name         = "${var.logical_product_family}-${var.logical_product_service}-svc-${local.random_id}"
   app_mesh_name        = "${var.logical_product_family}-${var.logical_product_service}-app-mesh-${local.random_id}"
