@@ -31,7 +31,7 @@ module "vpc" {
 
 module "namespace" {
   source  = "terraform.registry.launch.nttdata.com/module_primitive/private_dns_namespace/aws"
-  version = "~> 1.0.0"
+  version = "~> 1.0"
 
   vpc_id = module.vpc.vpc_id
   name   = local.namespace_name
@@ -39,7 +39,7 @@ module "namespace" {
 
 module "virtual_node" {
   source  = "terraform.registry.launch.nttdata.com/module_primitive/virtual_node/aws"
-  version = "~> 1.0.0"
+  version = "~> 1.0"
 
   acm_certificate_arn        = module.private_cert.certificate_arn
   ports                      = var.ports
@@ -61,14 +61,14 @@ module "virtual_node" {
 
 module "app_mesh" {
   source  = "terraform.registry.launch.nttdata.com/module_primitive/appmesh/aws"
-  version = "~> 1.0.0"
+  version = "~> 1.0"
 
   name = local.app_mesh_name
 }
 
 module "appmesh_virtual_service" {
   source  = "terraform.registry.launch.nttdata.com/module_primitive/virtual_service/aws"
-  version = "~> 1.0.0"
+  version = "~> 1.0"
 
   name              = local.service_name
   app_mesh_name     = local.app_mesh_name
@@ -83,7 +83,7 @@ module "appmesh_virtual_service" {
 
 module "appmesh_virtual_gateway" {
   source  = "terraform.registry.launch.nttdata.com/module_primitive/virtual_gateway/aws"
-  version = "~> 1.0.0"
+  version = "~> 1.0"
 
   name                                 = local.virtual_gateway_name
   mesh_name                            = local.app_mesh_name
@@ -118,7 +118,7 @@ module "appmesh_virtual_gateway_route" {
 
 module "private_ca" {
   source  = "terraform.registry.launch.nttdata.com/module_primitive/private_ca/aws"
-  version = "~> 1.0.0"
+  version = "~> 1.0"
 
   logical_product_family  = var.logical_product_family
   logical_product_service = var.logical_product_service
@@ -137,7 +137,7 @@ module "private_ca" {
 
 module "private_cert" {
   source  = "terraform.registry.launch.nttdata.com/module_primitive/acm_private_cert/aws"
-  version = "~> 1.0.0"
+  version = "~> 1.0"
 
   # Private CA is created if not passed as input
   private_ca_arn = length(var.certificate_authority_arns) == 0 ? module.private_ca.private_ca_arn : var.certificate_authority_arns[0]
