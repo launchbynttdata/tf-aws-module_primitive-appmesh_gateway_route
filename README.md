@@ -125,19 +125,13 @@ If `make check` target is successful, developer is good to commit the code to pr
 # Know Issues
 Currently, the `encrypt at transit` is not supported in terraform. There is an open issue for this logged with Hashicorp - https://github.com/hashicorp/terraform-provider-aws/pull/26987
 
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- BEGIN_TF_DOCS -->
 ## Requirements
 
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | ~> 1.0 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 5.0 |
-
-## Providers
-
-| Name | Version |
-|------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.73.0 |
 
 ## Modules
 
@@ -153,22 +147,22 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_name"></a> [name](#input\_name) | Name of the virtual gateway route | `string` | n/a | yes |
 | <a name="input_app_mesh_name"></a> [app\_mesh\_name](#input\_app\_mesh\_name) | Id of the App Mesh where the virtual gateway route will reside | `string` | n/a | yes |
+| <a name="input_match_hostname_exact"></a> [match\_hostname\_exact](#input\_match\_hostname\_exact) | Gateway route match exact hostname. Conflicts with var.match\_hostname\_suffix | `string` | `null` | no |
+| <a name="input_match_hostname_suffix"></a> [match\_hostname\_suffix](#input\_match\_hostname\_suffix) | Gateway route match hostname suffix. Specified ending characters of the host name to match on.<br/>    Conflicts with var.match\_hostname\_exact<br/>    Example: *.abc.com | `string` | `null` | no |
+| <a name="input_match_path_prefix"></a> [match\_path\_prefix](#input\_match\_path\_prefix) | Gateway route match path prefix. Default is `/`. Conflicts with var.match\_path\_exact and var.match\_path\_regex | `string` | `"/"` | no |
+| <a name="input_name"></a> [name](#input\_name) | Name of the virtual gateway route | `string` | n/a | yes |
+| <a name="input_rewrite_prefix"></a> [rewrite\_prefix](#input\_rewrite\_prefix) | Rewrite the prefix before sending the request to the backend. The supplied prefix will be prepended<br/>    For example if the rewrite\_prefix = /test/, then the request /a/b/test.html will be forwarded to the backend<br/>    as /test/a/b/test.html | `string` | `""` | no |
+| <a name="input_rewrite_target_hostname"></a> [rewrite\_target\_hostname](#input\_rewrite\_target\_hostname) | By default, the hostname in the request is rewritten to the hostname of the service. It can be DISABLED | `string` | `"ENABLED"` | no |
+| <a name="input_tags"></a> [tags](#input\_tags) | An arbitrary map of tags that can be added to all resources. | `map(string)` | `{}` | no |
 | <a name="input_virtual_gateway_name"></a> [virtual\_gateway\_name](#input\_virtual\_gateway\_name) | Id of the Virtual Gateway to associated with this gateway route | `string` | n/a | yes |
 | <a name="input_virtual_service_name"></a> [virtual\_service\_name](#input\_virtual\_service\_name) | Name of the Virtual Service to set as a target | `string` | n/a | yes |
 | <a name="input_virtual_service_port"></a> [virtual\_service\_port](#input\_virtual\_service\_port) | Port of the Virtual service to send traffic to. | `number` | `null` | no |
-| <a name="input_rewrite_target_hostname"></a> [rewrite\_target\_hostname](#input\_rewrite\_target\_hostname) | By default, the hostname in the request is rewritten to the hostname of the service. It can be DISABLED | `string` | `"ENABLED"` | no |
-| <a name="input_match_path_prefix"></a> [match\_path\_prefix](#input\_match\_path\_prefix) | Gateway route match path prefix. Default is `/`. Conflicts with var.match\_path\_exact and var.match\_path\_regex | `string` | `"/"` | no |
-| <a name="input_rewrite_prefix"></a> [rewrite\_prefix](#input\_rewrite\_prefix) | Rewrite the prefix before sending the request to the backend. The supplied prefix will be prepended<br>    For example if the rewrite\_prefix = /test/, then the request /a/b/test.html will be forwarded to the backend<br>    as /test/a/b/test.html | `string` | `""` | no |
-| <a name="input_match_hostname_exact"></a> [match\_hostname\_exact](#input\_match\_hostname\_exact) | Gateway route match exact hostname. Conflicts with var.match\_hostname\_suffix | `string` | `null` | no |
-| <a name="input_match_hostname_suffix"></a> [match\_hostname\_suffix](#input\_match\_hostname\_suffix) | Gateway route match hostname suffix. Specified ending characters of the host name to match on.<br>    Conflicts with var.match\_hostname\_exact<br>    Example: *.abc.com | `string` | `null` | no |
-| <a name="input_tags"></a> [tags](#input\_tags) | An arbitrary map of tags that can be added to all resources. | `map(string)` | `{}` | no |
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
-| <a name="output_id"></a> [id](#output\_id) | ID of the virtual gateway |
 | <a name="output_arn"></a> [arn](#output\_arn) | ARN of the virtual gateway |
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+| <a name="output_id"></a> [id](#output\_id) | ID of the virtual gateway |
+<!-- END_TF_DOCS -->
