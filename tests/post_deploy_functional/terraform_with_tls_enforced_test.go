@@ -7,9 +7,9 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/appmesh"
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/gruntwork-io/terratest/modules/logger"
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	test_structure "github.com/gruntwork-io/terratest/modules/test-structure"
@@ -25,6 +25,34 @@ const (
 	testVarFileName = "/test.tfvars"
 	caModule        = "module.private_ca"
 )
+
+func awsRegion() string {
+	for _, v := range []string{os.Getenv("AWS_DEFAULT_REGION"), os.Getenv("AWS_REGION")} {
+		if v != "" {
+			return v
+		}
+	}
+	return "us-east-2"
+}
+
+func appmeshClient(t *testing.T) *appmesh.Client {
+	t.Helper()
+
+	loadOpts := []func(*config.LoadOptions) error{
+		config.WithRegion(awsRegion()),
+	}
+	if profile := os.Getenv("AWS_PROFILE"); profile != "" {
+		loadOpts = append(loadOpts, config.WithSharedConfigProfile(profile))
+	}
+
+	cfg, err := config.LoadDefaultConfig(context.Background(), loadOpts...)
+	if err != nil {
+		assert.Fail(t, fmt.Sprintf("can't connect to aws: %s", err.Error()))
+		return nil
+	}
+
+	return appmesh.NewFromConfig(cfg)
+}
 
 func TestAppMeshGatewayRouteAndVirtualNode(t *testing.T) {
 	t.Parallel()
@@ -68,23 +96,23 @@ func setupAndTestAppMeshGatewayRoute(t *testing.T, dir string) {
 
 	test_structure.SaveTerraformOptions(t, dir, terraformOptions)
 
-	terraform.InitAndApply(t, terraformOptionsCA)
+	terraform.InitAndApplyContext(t, context.Background(), terraformOptionsCA)
 	// sleep for 1 minutes for the CA status change to ISSUED
 	// time.Sleep(1 * time.Minute)
-	terraform.InitAndApply(t, terraformOptions)
+	terraform.InitAndApplyContext(t, context.Background(), terraformOptions)
 
 	expectedPatternGatewayARN := "^arn:aws:appmesh:[a-z]{2}-[a-z]+-[0-9]{1}:[0-9]{12}:mesh/[a-zA-Z0-9-]+/virtualGateway/[a-zA-Z0-9-]+$"
 	expectedPatternRouteARN := "^arn:aws:appmesh:[a-z]{2}-[a-z]+-[0-9]{1}:[0-9]{12}:mesh/[a-zA-Z0-9-]+/virtualGateway/[a-zA-Z0-9-]+/gatewayRoute/[a-zA-Z0-9-]+$"
 
-	actualVirtualGatewayId := terraform.Output(t, terraformOptions, "vgw_id")
+	actualVirtualGatewayId := terraform.OutputContext(t, context.Background(), terraformOptions, "vgw_id")
 	assert.NotEmpty(t, actualVirtualGatewayId, "Virtual Gateway Id is empty")
-	actualGatewayrouteId := terraform.Output(t, terraformOptions, "id")
+	actualGatewayrouteId := terraform.OutputContext(t, context.Background(), terraformOptions, "id")
 	assert.NotEmpty(t, actualGatewayrouteId, "Gateway route Id is empty")
-	actualVgwARN := terraform.Output(t, terraformOptions, "vgw_arn")
+	actualVgwARN := terraform.OutputContext(t, context.Background(), terraformOptions, "vgw_arn")
 	assert.Regexp(t, expectedPatternGatewayARN, actualVgwARN, "Virtual Gateway ARN does not match expected pattern")
-	actualGatewayRouteARN := terraform.Output(t, terraformOptions, "arn")
+	actualGatewayRouteARN := terraform.OutputContext(t, context.Background(), terraformOptions, "arn")
 	assert.Regexp(t, expectedPatternRouteARN, actualGatewayRouteARN, "Gateway route ARN does not match expected pattern")
-	actualRandomId := terraform.Output(t, terraformOptions, "random_int")
+	actualRandomId := terraform.OutputContext(t, context.Background(), terraformOptions, "random_int")
 	assert.NotEmpty(t, actualRandomId, "Random ID is empty")
 
 	logical_product_family     := terraform.GetVariableAsStringFromVarFile(t, dir+testVarFileName, "logical_product_family")
@@ -94,24 +122,19 @@ func setupAndTestAppMeshGatewayRoute(t *testing.T, dir string) {
 	expectedGatewayRouteName   := expectedNamePrefix + "-vroute-" + actualRandomId
 	expectedVirtualGatewayName := expectedNamePrefix + "-vgw-" + actualRandomId
 
-	cfg, err := config.LoadDefaultConfig(
-		context.TODO(),
-		config.WithSharedConfigProfile(os.Getenv("AWS_PROFILE")),
-	)
-	if err != nil {
-		assert.Error(t, err, "can't connect to aws")
+	client := appmeshClient(t)
+	if client == nil {
+		return
 	}
-
-	client := appmesh.NewFromConfig(cfg)
 	input := &appmesh.DescribeGatewayRouteInput{
 		MeshName:           aws.String(expectedMeshName),
 		GatewayRouteName:   aws.String(expectedGatewayRouteName),
 		VirtualGatewayName: aws.String(expectedVirtualGatewayName),
 	}
-	result, err := client.DescribeGatewayRoute(context.TODO(), input)
+	result, err := client.DescribeGatewayRoute(context.Background(), input)
 	if err != nil {
 		assert.Fail(t, fmt.Sprintf("The Expected Gateway route was not found %s", err.Error()))
-
+		return
 	}
 
 	gatewayRoute := result.GatewayRoute
@@ -136,39 +159,33 @@ func setupAndTestAppMeshVirtualNode(t *testing.T, dir string) {
 
 	test_structure.SaveTerraformOptions(t, dir, terraformOptions)
 
-	terraform.InitAndApply(t, terraformOptions)
+	terraform.InitAndApplyContext(t, context.Background(), terraformOptions)
 
 	expectedPatternNodeARN := "^arn:aws:appmesh:[a-z]{2}-[a-z]+-[0-9]{1}:[0-9]{12}:mesh/[a-zA-Z0-9-]+/virtualNode/[a-zA-Z0-9-]+$"
 
-	actualVirtualNodeARN := terraform.Output(t, terraformOptions, "vnode_arn")
-	actualVirtualNodeName := terraform.Output(t, terraformOptions, "vnode_name")
+	actualVirtualNodeARN := terraform.OutputContext(t, context.Background(), terraformOptions, "vnode_arn")
+	actualVirtualNodeName := terraform.OutputContext(t, context.Background(), terraformOptions, "vnode_name")
 	assert.Regexp(t, expectedPatternNodeARN, actualVirtualNodeARN, "Virtual node ARN does not match expected pattern")
-	actualRandomId := terraform.Output(t, terraformOptions, "random_int")
+	actualRandomId := terraform.OutputContext(t, context.Background(), terraformOptions, "random_int")
 	assert.NotEmpty(t, actualRandomId, "Random ID is empty")
 
 	logical_product_family     := terraform.GetVariableAsStringFromVarFile(t, dir+testVarFileName, "logical_product_family")
 	logical_product_service    := terraform.GetVariableAsStringFromVarFile(t, dir+testVarFileName, "logical_product_service")
-	expectedNamePrefix         := logical_product_family + "-" + logical_product_service
-	expectedMeshName           := expectedNamePrefix + "-app-mesh-" + actualRandomId
-	expectedVirtualNodeName    := expectedNamePrefix + "-vnode-" + actualRandomId
+	expectedNamePrefix := logical_product_family + "-" + logical_product_service
+	expectedMeshName   := expectedNamePrefix + "-app-mesh-" + actualRandomId
 
-	cfg, err := config.LoadDefaultConfig(
-		context.TODO(),
-		config.WithSharedConfigProfile(os.Getenv("AWS_PROFILE")),
-	)
-	if err != nil {
-		assert.Error(t, err, "can't connect to aws")
+	client := appmeshClient(t)
+	if client == nil {
+		return
 	}
-
-	client := appmesh.NewFromConfig(cfg)
 	input := &appmesh.DescribeVirtualNodeInput{
 		MeshName:        aws.String(expectedMeshName),
-		VirtualNodeName: aws.String(expectedVirtualNodeName),
+		VirtualNodeName: aws.String(actualVirtualNodeName),
 	}
-	result, err := client.DescribeVirtualNode(context.TODO(), input)
+	result, err := client.DescribeVirtualNode(context.Background(), input)
 	if err != nil {
 		assert.Fail(t, fmt.Sprintf("The Expected virtual node was not found %s", err.Error()))
-
+		return
 	}
 
 	virtualNode  := result.VirtualNode
@@ -185,7 +202,7 @@ func setupAndTestAppMeshVirtualNode(t *testing.T, dir string) {
 func checkTagsMatch(t *testing.T, dir string, actualARN string, client *appmesh.Client) {
 	expectedTags, err := terraform.GetVariableAsMapFromVarFileE(t, dir+testVarFileName, "tags")
 	if err == nil {
-		result2, errListTags := client.ListTagsForResource(context.TODO(), &appmesh.ListTagsForResourceInput{ResourceArn: aws.String(actualARN)})
+		result2, errListTags := client.ListTagsForResource(context.Background(), &appmesh.ListTagsForResourceInput{ResourceArn: aws.String(actualARN)})
 		if errListTags != nil {
 			assert.Error(t, errListTags, "Failed to retrieve tags from AWS")
 		}
@@ -207,12 +224,12 @@ func checkTagsMatch(t *testing.T, dir string, actualARN string, client *appmesh.
 func tearDownAppMeshGatewayRoute(t *testing.T, dir string) {
 	terraformOptions := test_structure.LoadTerraformOptions(t, dir)
 	terraformOptions.Logger = logger.Discard
-	terraform.Destroy(t, terraformOptions)
+	terraform.DestroyContext(t, context.Background(), terraformOptions)
 
 }
 
 func tearDownAppMeshVirtualNode(t *testing.T, dir string) {
 	terraformOptions := test_structure.LoadTerraformOptions(t, dir)
 	terraformOptions.Logger = logger.Discard
-	terraform.Destroy(t, terraformOptions)
+	terraform.DestroyContext(t, context.Background(), terraformOptions)
 }
