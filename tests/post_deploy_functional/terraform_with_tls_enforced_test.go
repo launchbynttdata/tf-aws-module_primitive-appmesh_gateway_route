@@ -26,28 +26,27 @@ const (
 	caModule        = "module.private_ca"
 )
 
-func awsRegion() string {
-	for _, v := range []string{os.Getenv("AWS_DEFAULT_REGION"), os.Getenv("AWS_REGION")} {
-		if v != "" {
-			return v
-		}
-	}
-	return "us-east-2"
-}
-
 func appmeshClient(t *testing.T) *appmesh.Client {
 	t.Helper()
 
-	loadOpts := []func(*config.LoadOptions) error{
-		config.WithRegion(awsRegion()),
-	}
+	loadOpts := []func(*config.LoadOptions) error{}
 	if profile := os.Getenv("AWS_PROFILE"); profile != "" {
 		loadOpts = append(loadOpts, config.WithSharedConfigProfile(profile))
+	}
+	for _, region := range []string{os.Getenv("AWS_DEFAULT_REGION"), os.Getenv("AWS_REGION")} {
+		if region != "" {
+			loadOpts = append(loadOpts, config.WithRegion(region))
+			break
+		}
 	}
 
 	cfg, err := config.LoadDefaultConfig(context.Background(), loadOpts...)
 	if err != nil {
 		assert.Fail(t, fmt.Sprintf("can't connect to aws: %s", err.Error()))
+		return nil
+	}
+	if cfg.Region == "" {
+		assert.Fail(t, "AWS region is not configured; set AWS_REGION, AWS_DEFAULT_REGION, or a default region in shared config")
 		return nil
 	}
 
@@ -171,8 +170,9 @@ func setupAndTestAppMeshVirtualNode(t *testing.T, dir string) {
 
 	logical_product_family     := terraform.GetVariableAsStringFromVarFile(t, dir+testVarFileName, "logical_product_family")
 	logical_product_service    := terraform.GetVariableAsStringFromVarFile(t, dir+testVarFileName, "logical_product_service")
-	expectedNamePrefix := logical_product_family + "-" + logical_product_service
-	expectedMeshName   := expectedNamePrefix + "-app-mesh-" + actualRandomId
+	expectedNamePrefix      := logical_product_family + "-" + logical_product_service
+	expectedMeshName        := expectedNamePrefix + "-app-mesh-" + actualRandomId
+	expectedVirtualNodeName := expectedNamePrefix + "-vnode-" + actualRandomId
 
 	client := appmeshClient(t)
 	if client == nil {
@@ -180,7 +180,7 @@ func setupAndTestAppMeshVirtualNode(t *testing.T, dir string) {
 	}
 	input := &appmesh.DescribeVirtualNodeInput{
 		MeshName:        aws.String(expectedMeshName),
-		VirtualNodeName: aws.String(actualVirtualNodeName),
+		VirtualNodeName: aws.String(expectedVirtualNodeName),
 	}
 	result, err := client.DescribeVirtualNode(context.Background(), input)
 	if err != nil {
