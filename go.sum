@@ -28,8 +28,8 @@ github.com/aws/aws-sdk-go-v2/internal/v4a v1.5.6 h1:Qmn60RWuk9+bd2ddvJJqwf3Cpac3
 github.com/aws/aws-sdk-go-v2/internal/v4a v1.5.6/go.mod h1:h/YJhe4AVyQxEUMluph10iqV7mjajH7A9L+BHF5ppis=
 github.com/aws/aws-sdk-go-v2/service/acm v1.38.2 h1:ozcwethaFOi2ST9h6MKGq1GAIHP68tjiDqgkWVPwfR8=
 github.com/aws/aws-sdk-go-v2/service/acm v1.38.2/go.mod h1:HNtDOv4XmqExPxNIBp171KKc5ZoUJwHH9ZhlCcZmdt0=
-github.com/aws/aws-sdk-go-v2/service/appmesh v1.44.4 h1:QnOoZTB/PY0j2LlDY9y6GBFWb9hxKk/AyjCL6auGJmE=
-github.com/aws/aws-sdk-go-v2/service/appmesh v1.44.4/go.mod h1:dn/JwP4taS1nRvNF3qIcNoHaOwXkXmx54XdhzseFUDQ=
+github.com/aws/aws-sdk-go-v2/service/appmesh v1.44.5 h1:sY8b3cxE4pJKu4mf01lkxYuwwjb6pZR3Wn5ZJZOI8yA=
+github.com/aws/aws-sdk-go-v2/service/appmesh v1.44.5/go.mod h1:dn/JwP4taS1nRvNF3qIcNoHaOwXkXmx54XdhzseFUDQ=
 github.com/aws/aws-sdk-go-v2/service/autoscaling v1.66.1 h1:kGlbhb5GMfkP/bcqcbt3oDi50kwDTpRmNzYUY9LqbLk=
 github.com/aws/aws-sdk-go-v2/service/autoscaling v1.66.1/go.mod h1:z45kurrOonQepd3SN5LIgropAn1NGHwBn1yOMF+QVFU=
 github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs v1.69.1 h1:2ANEV0YkO/NlWxVmHBui7w7NE3lHW2sJji+OtjKJwck=
